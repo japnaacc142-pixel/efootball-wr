@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eFootball Team Match Logger & WR Tracker</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 15px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2 { color: #58a6ff; text-align: center; margin-bottom: 20px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        input, select { background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 10px; border-radius: 6px; width: 100%; font-size: 14px; }
+        input:focus { border-color: #58a6ff; outline: none; }
+        button { background: #238636; color: #fff; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 15px; transition: 0.2s; }
+        button:hover { background: #2ea043; }
+        .btn-clear { background: #da3633; margin-top: 10px; }
+        .btn-clear:hover { background: #f85149; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #30363d; padding: 10px; text-align: center; font-size: 14px; }
+        th { background: #21262d; color: #58a6ff; }
+        tr:nth-child(even) { background: #161b22; }
+        .wr-badge { font-weight: bold; color: #3fb950; }
+        .win { color: #3fb950; font-weight: bold; }
+        .loss { color: #f85149; font-weight: bold; }
+        .draw { color: #d29922; font-weight: bold; }
+        .responsive-table { overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>eFootball Team WR Tracker</h1>
+
+    <!-- Match Entry Form -->
+    <div class="card">
+        <h2>+ ပွဲစဉ်ရလဒ် ထည့်ရန်</h2>
+        <div class="form-grid">
+            <input type="date" id="matchDate">
+            <input type="text" id="playerName" placeholder="Player Name (ဥပမာ - Quang Le)">
+            <input type="number" id="myScore" placeholder="Our Score" min="0">
+            <input type="number" id="oppScore" placeholder="Opponent Score" min="0">
+        </div>
+        <button onclick="addMatch()">Save Match Result</button>
+    </div>
+
+    <!-- Monthly Player WR Summary Table -->
+    <div class="card responsive-table">
+        <h2>📊 Player အလိုက် Monthly WR ဇယား</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Player Name</th>
+                    <th>P</th>
+                    <th>W</th>
+                    <th>D</th>
+                    <th>L</th>
+                    <th>GF-GA</th>
+                    <th>Win Rate (%)</th>
+                </tr>
+            </thead>
+            <tbody id="summaryBody"></tbody>
+        </table>
+    </div>
+
+    <!-- Detailed Match Logs -->
+    <div class="card responsive-table">
+        <h2>📝 ထည့်သွင်းထားသော ပွဲစဉ်မှတ်တမ်းများ</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Player</th>
+                    <th>Result (Score)</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="logsBody"></tbody>
+        </table>
+        <button class="btn-clear" onclick="clearAllData()">Clear All Data (အကုန်ဖျက်ရန်)</button>
+    </div>
+</div>
+
+<script>
+    let matches = JSON.parse(localStorage.getItem('efootball_matches')) || [];
+
+    // Set today's date as default
+    document.getElementById('matchDate').valueAsDate = new Date();
+
+    function saveAndRender() {
+        localStorage.setItem('efootball_matches', JSON.stringify(matches));
+        renderTables();
+    }
+
+    function addMatch() {
+        const date = document.getElementById('matchDate').value;
+        const name = document.getElementById('playerName').value.trim();
+        const myScore = parseInt(document.getElementById('myScore').value);
+        const oppScore = parseInt(document.getElementById('oppScore').value);
+
+        if (!date || !name || isNaN(myScore) || isNaN(oppScore)) {
+            alert("ကျေးဇူးပြု၍ အချက်အလက်များကို ပြည့်စုံစွာ ထည့်သွင်းပါ။");
+            return;
+        }
+
+        let status = 'Draw';
+        if (myScore > oppScore) status = 'Win';
+        else if (myScore < oppScore) status = 'Loss';
+
+        matches.push({
+            id: Date.now(),
+            date,
+            name,
+            myScore,
+            oppScore,
+            status
+        });
+
+        // Reset inputs
+        document.getElementById('playerName').value = '';
+        document.getElementById('myScore').value = '';
+        document.getElementById('oppScore').value = '';
+
+        saveAndRender();
+    }
+
+    function deleteMatch(id) {
+        matches = matches.filter(m => m.id !== id);
+        saveAndRender();
+    }
+
+    function clearAllData() {
+        if (confirm("မှတ်တမ်းအားလုံးကို ဖျက်ရန် သေချာပါသလား။")) {
+            matches = [];
+            saveAndRender();
+        }
+    }
+
+    function renderTables() {
+        // 1. Render Summary Table
+        const summary = {};
+        matches.forEach(m => {
+            if (!summary[m.name]) {
+                summary[m.name] = { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 };
+            }
+            summary[m.name].p++;
+            summary[m.name].gf += m.myScore;
+            summary[m.name].ga += m.oppScore;
+
+            if (m.status === 'Win') summary[m.name].w++;
+            else if (m.status === 'Draw') summary[m.name].d++;
+            else if (m.status === 'Loss') summary[m.name].l++;
+        });
+
+        const summaryBody = document.getElementById('summaryBody');
+        summaryBody.innerHTML = '';
+
+        Object.keys(summary).forEach(name => {
+            const s = summary[name];
+            const wr = ((s.w / s.p) * 100).toFixed(1);
+            summaryBody.innerHTML += `
+                <tr>
+                    <td><b>${name}</b></td>
+                    <td>${s.p}</td>
+                    <td class="win">${s.w}</td>
+                    <td class="draw">${s.d}</td>
+                    <td class="loss">${s.l}</td>
+                    <td>${s.gf}-${s.ga}</td>
+                    <td class="wr-badge">${wr}%</td>
+                </tr>
+            `;
+        });
+
+        // 2. Render Logs Table
+        const logsBody = document.getElementById('logsBody');
+        logsBody.innerHTML = '';
+        matches.slice().reverse().forEach(m => {
+            let statusClass = m.status === 'Win' ? 'win' : (m.status === 'Loss' ? 'loss' : 'draw');
+            logsBody.innerHTML += `
+                <tr>
+                    <td>${m.date}</td>
+                    <td>${m.name}</td>
+                    <td><b>${m.myScore} - ${m.oppScore}</b></td>
+                    <td class="${statusClass}">${m.status}</td>
+                    <td><button style="background:#da3633; padding:4px 8px; font-size:12px; width:auto;" onclick="deleteMatch(${m.id})">Delete</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    // Initial Load
+    renderTables();
+</script>
+
+</body>
+</html>
