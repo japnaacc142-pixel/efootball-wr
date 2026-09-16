@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eFootball Player WR Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #1e1e1e;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.2);
+            width: 320px;
+            text-align: center;
+        }
+        h2 {
+            color: #00ffcc;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #bbb;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background-color: #2a2a2a;
+            color: #fff;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: #00ffcc;
+            color: #000;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #00cca3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            display: none;
+        }
+        .wr-highlight {
+            font-size: 24px;
+            color: #00ffcc;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>eFootball WR Calculator</h2>
+    
+    <div class="input-group">
+        <label for="total">Total Matches (စုစုပေါင်း ပွဲအရေအတွက်)</label>
+        <input type="number" id="total" placeholder="e.g. 100">
+    </div>
+
+    <div class="input-group">
+        <label for="wins">Wins (နိုင်ပွဲ)</label>
+        <input type="number" id="wins" placeholder="e.g. 60">
+    </div>
+
+    <div class="input-group">
+        <label for="draws">Draws (သရေပွဲ - Optional)</label>
+        <input type="number" id="draws" placeholder="e.g. 15" value="0">
+    </div>
+
+    <button onclick="calculateWR()">Calculate WR</button>
+
+    <div class="result" id="resultBox">
+        <p>Win Rate:</p>
+        <div class="wr-highlight" id="wrResult">0%</div>
+        <hr style="border-color: #444; margin: 15px 0;">
+        <p id="details" style="font-size: 14px; color: #ccc;"></p>
+    </div>
+</div>
+
+<script>
+    function calculateWR() {
+        const total = parseInt(document.getElementById('total').value);
+        const wins = parseInt(document.getElementById('wins').value);
+        const draws = parseInt(document.getElementById('draws').value) || 0;
+        
+        if (isNaN(total) || isNaN(wins) || total <= 0) {
+            alert("ကျေးဇူးပြု၍ ပွဲအရေအတွက်နှင့် နိုင်ပွဲများကို မှန်ကန်စွာ ထည့်သွင်းပါ။");
+            return;
+        }
+
+        const losses = total - (wins + draws);
+
+        if (losses < 0) {
+            alert("နိုင်ပွဲနှင့် သရေပွဲ ပေါင်းလဒ်သည် စုစုပေါင်းပွဲထက် မများနိုင်ပါ။");
+            return;
+        }
+
+        const winRate = ((wins / total) * 100).toFixed(2);
+        const drawRate = ((draws / total) * 100).toFixed(2);
+        const lossRate = ((losses / total) * 100).toFixed(2);
+
+        document.getElementById('wrResult').innerText = winRate + "%";
+        document.getElementById('details').innerHTML = 
+            `<b>Wins:</b> ${wins} (${winRate}%)<br>` +
+            `<b>Draws:</b> ${draws} (${drawRate}%)<br>` +
+            `<b>Losses:</b> ${losses} (${lossRate}%)`;
+        
+        document.getElementById('resultBox').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
